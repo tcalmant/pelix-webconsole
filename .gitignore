@@ -1,0 +1,40 @@
+# Python
+*.pyc
+*.pyo
+__pycache__/
+
+# IDE
+.settings/
+.idea/
+
+# Python build
+build/
+dist/
+iPOPO.egg-info/
+target/
+
+# Module generated during tests
+generated_bundle.py
+
+# Binaries
+*.tar.gz
+*.zip
+
+# Tests and coverage
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+
+# ConfigurationAdmin folder
+conf/
+
+# Profiling
+*.lprof
+
+# Epydoc Help
+api/
+html/
+
+# TypeScript
+*.map

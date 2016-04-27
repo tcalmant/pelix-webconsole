@@ -1,0 +1,15 @@
+install pelix.http.basic
+start $?
+
+# Start the HTTP Server, on a port 8080
+instantiate pelix.http.service.basic.factory httpd http.port=8080
+
+# Start the WebConsole bundle
+install pelix_webconsole.core
+start $?
+
+# Add pages
+install pelix_webconsole.bundles
+start $?
+install pelix_webconsole.services
+start $?
