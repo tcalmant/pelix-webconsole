@@ -35,6 +35,9 @@ try:
 except ImportError:
     from urllib import urlencode, urlsplit
 
+# Setuptools
+import pkg_resources
+
 # iPOPO Decorators
 from pelix.ipopo.decorators import ComponentFactory, Provides, RequiresMap, \
     Instantiate, Property, Validate
@@ -77,8 +80,6 @@ class WebConsoleServlet(object):
         self._pages = None
         self._path = None
         self._context = None
-        self._static_folder = os.path.join(
-            os.path.dirname(pelix_webconsole.__file__), "_static")
 
     @Validate
     def validate(self, context):
@@ -122,11 +123,18 @@ class WebConsoleServlet(object):
             else:
                 return response.send_content(404, "<p>Unknown API version</p>")
         else:
-            # Static file
-            filepath = os.path.join(self._static_folder, os.path.sep.join(path))
-            with open(filepath, "rb") as fp:
+            # Static file, use pkg_resources
+            file_subpath = os.path.join("_static", os.path.sep.join(path))
+            try:
+                # Use setuptools when possible
+                data = pkg_resources.resource_string(__name__, file_subpath)
+            except IOError:
+                # File not found
+                response.send_content(404, "<h1>File not found</h1>\n"
+                                           "<p>{0}</p>".format(file_subpath))
+            else:
                 response.send_content(
-                    200, fp.read(), mimetypes.guess_type(filepath))
+                    200, data, mimetypes.guess_type(file_subpath))
 
     def send_pages(self, response):
         """
