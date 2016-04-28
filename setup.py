@@ -60,7 +60,8 @@ setup(
     author='Thomas Calmant',
     author_email='thomas.calmant@gmail.com',
     url='https://ipopo.coderxpress.net/',
-    packages = ['pelix_webconsole'],
+    packages=['pelix_webconsole'],
+    include_package_data=True,
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',

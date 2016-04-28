@@ -1,0 +1,5 @@
+# Import everything in the HTML folders
+graft pelix_webconsole/_static
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
