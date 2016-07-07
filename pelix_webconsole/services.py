@@ -25,6 +25,9 @@ Pelix Web Console: services pages
     limitations under the License.
 """
 
+# Standard library
+import json
+
 # iPOPO Decorators
 from pelix.ipopo.decorators import ComponentFactory, Requires, Validate, \
     Instantiate
@@ -69,7 +72,6 @@ class ServicesPage(BasicPage):
         """
         self._id = "services"
         self._title = "Services"
-
         self._context = context
 
     def handle(self, sub_url, response):
@@ -79,137 +81,19 @@ class ServicesPage(BasicPage):
         :param sub_url: Request sub-URL
         :param response: Response bean
         """
-        parts = sub_url.split('/')
+        parts = [part for part in sub_url.split('/') if part]
         if parts:
-            try:
-                if parts[0] == 'details':
-                    return self._details(int(parts[1]), response)
-            except IndexError:
-                return response.send_content(500, "Argument missing")
+            return response.send_content(500, "Arguments are not supported")
 
         # Normalize service data
-        references = self._context.get_all_service_references(None)
         services_info = [
             {"id": ref.get_property(constants.SERVICE_ID),
-             "specs": self.make_service_link(
-                 ref, ";".join(ref.get_property(constants.OBJECTCLASS))),
-             "bundle": self.make_bundle_link(ref.get_bundle()),
-             "rank": ref.get_property(constants.SERVICE_RANKING)}
-            for ref in references]
+             "specifications": ref.get_property(constants.OBJECTCLASS),
+             "providerId": ref.get_bundle().get_bundle_id(),
+             "properties": {
+                 str(key): str(value)
+                 for key, value in ref.get_properties().items()}
+             } for ref in self._context.get_all_service_references(None)]
 
-        rows = ["<tr>\n"
-                "  <td>{id}</td>\n"
-                "  <td>{specs}</td>\n"
-                "  <td>{bundle}</td>\n"
-                "  <td>{rank}</td>\n"
-                "</tr>".format(**svc_info)
-                for svc_info in services_info]
-
-        page = """
-<h1>Services</h1>
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
-    <thead>
-        <th>ID</th>
-        <th>Specifications</th>
-        <th>Bundle</th>
-        <th>Ranking</th>
-    </thead>
-    <tbody>
-    {rows}
-    </tbody>
-    </table>
-</div>
-    """.format(rows='\n'.join(rows))
-        response.send_content(200, page)
-
-    def _details(self, svc_id, response):
-        """
-        Prints the details of a service
-
-        :param svc_id: ID of the service
-        :param response: Response bean
-        """
-        svc_ref = self._context.get_service_reference(
-            None, "({0}={1})".format(constants.SERVICE_ID, svc_id))
-        if svc_ref is None:
-            return response.send_content(
-                404, "Service not found: {0}".format(svc_id))
-
-        # Service properties (escaped)
-        props = svc_ref.get_properties()
-        props_rows = [
-            "<tr>\n"
-            "  <td>{0}</td>\n"
-            "  <td>{1}</td>\n"
-            "</tr>".format(self.escape(key), self.escape(props[key]))
-            for key in sorted(props)]
-
-        # Consuming bundles
-        bundles_rows = [
-            "<tr>\n"
-            "  <td>{0}</td>\n"
-            "</tr>".format(self.make_bundle_link(bundle))
-            for bundle in svc_ref.get_using_bundles()]
-
-        page = """
-    <h1>Service {sid}</h1>
-    <h2>Basic Information</h2>
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-        <thead>
-            <th>Property</th>
-            <th>Value</th>
-        </thead>
-        <tbody>
-            <tr>
-                <td>ID</td>
-                <td>{sid}</td>
-            </tr>
-            <tr>
-                <td>Rank</td>
-                <td>{rank}</td>
-            </tr>
-            <tr>
-                <td>Specifications</td>
-                <td>{specs}</td>
-            </tr>
-            <tr>
-                <td>Bundle</td>
-                <td>{bundle_link}</td>
-            </tr>
-        </tbody>
-        </table>
-    </div>
-
-    <h2>Service Properties</h2>
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-        <thead>
-            <th>Key</th>
-            <th>Value</th>
-        </thead>
-        <tbody>
-        {props_rows}
-        </tbody>
-        </table>
-    </div>
-
-    <h2>Bundles using this service</h2>
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-        <thead>
-            <th>Bundles</th>
-        </thead>
-        <tbody>
-        {bundles_rows}
-        </tbody>
-        </table>
-    </div>
-            """.format(
-            sid=svc_id, rank=svc_ref.get_property(constants.SERVICE_RANKING),
-            specs=";".join(svc_ref.get_property(constants.OBJECTCLASS)),
-            bundle_link=self.make_bundle_link(svc_ref.get_bundle()),
-            props_rows='\n'.join(props_rows),
-            bundles_rows='\n'.join(bundles_rows))
-        response.send_content(200, page)
+        response.send_content(200, json.dumps(services_info),
+                              mime_type="application/json")
