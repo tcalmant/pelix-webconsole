@@ -134,7 +134,8 @@ class WebConsoleServlet(object):
                                            "<p>{0}</p>".format(file_subpath))
             else:
                 response.send_content(
-                    200, data, mimetypes.guess_type(file_subpath))
+                    200, data,
+                    mimetypes.guess_type(file_subpath)[0] or "text/plain")
 
     def send_pages(self, response):
         """
